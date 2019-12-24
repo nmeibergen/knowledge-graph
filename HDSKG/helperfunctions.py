@@ -14,7 +14,9 @@ def set_pos_exceptions(doc):
             # nmod, i.e. nmod(medeoprichter, Verenigde). However, because medeoprichter functions as part of the larger
             # verb "is medeoprichter van" we need to identify that the nmod works as the obl relation. We will apply the
             # obl approach if the token_head is of the type VERB. Therefore we set to verb.
-            token.pos_ = "VERB"
+
+            #token.pos_ = "VERB"
+            pass
 
     return doc
 
@@ -26,3 +28,10 @@ def print_grammer(doc):
 
 def view_displacy(doc, style='dep', port=8002):
     displacy.serve(doc, style=style, port=port)
+
+
+def index_of(val, in_list, value_if_not_exists=-1):
+    try:
+        return in_list.index(val)
+    except ValueError:
+        return value_if_not_exists

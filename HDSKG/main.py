@@ -7,7 +7,9 @@ nlp = spacy.load('nl_core_news_sm')
 #text = "webkit is developed by Intel at the Intel Open Source Technology Center."
 text = "webkit is ontwikkeld door Intel, aan de Intel Open Source Technology Center. Pieter houdt niet altijd van appels. Ester is groot en Linda is niet klein. Dementie is echter nog niet verholpen."
 #text = "De Wet langdurige zorg (Wlz) is in Nederland een verplichte, collectieve ziektekostenverzekering voor niet individueel verzekerbare ziektekostenrisico's. De wet heeft per 1 januari 2015 de Algemene Wet Bijzondere Ziektekosten (AWBZ) vervangen, maar biedt een beperktere dekking"
+
 text = """De Mini-Mental State Examination (MMSE) wordt gewoonlijk gebruikt als deel van het diagnostisch proces, zoals ook vermeld wordt in het DSM handboek. Deze MMSE is een cognitieve test die op papier wordt afgenomen. De maximum score is 30. Lage scores duiden op meer ernstige cognitieve problemen. Bij een score van 24 spreekt men gewoonlijk van een "normaal" cognitief functioneren.In een Cochrane review van 2016 werd bevestigd dat de MMSE kan gebruikt worden om te besluiten of een 65-plusser wel of niet dementie heeft. De testresultaten moeten daarbij echter steeds in een bredere context worden gesteld. Er moet rekening worden gehouden met de persoonlijkheid, het gedrag en de zelfredzaamheid van de patiënt in zijn dagelijks leven."""
+
 text = """Brazilië, officieel de Federale Republiek van Brazilië (Portugees: República Federativa do Brasil; IPA: [bɾaˈziw]), is een land in Zuid-Amerika grenzend aan Frankrijk (Frans-Guyana), Suriname, Guyana, Venezuela, Colombia, Peru, Bolivia, Paraguay, Argentinië, Uruguay en de Atlantische Oceaan. Brasilia is de hoofdstad, São Paulo is de grootste stad in het land.
 
 Brazilië is met zijn 8,5 miljoen vierkante kilometer het grootste land van Zuid-Amerika, het beslaat bijna de helft van dit continent. Het is bovendien het vijfde grootste land ter wereld, alleen Rusland, Canada, de Verenigde Staten en China zijn groter. Met meer dan 208 miljoen inwoners is het daarnaast het zesde land gemeten naar bevolkingsomvang.
@@ -16,6 +18,7 @@ De oorspronkelijke bevolking van Brazilië bestond uit indianen die de tropische
 
 Brazilië is medeoprichter van de Verenigde Naties, de G20, Mercosur, de Organisatie van Amerikaanse Staten en de BRICS
 """
+
 text = """Arnold Schwarzenegger werd geboren in Thal, vlak bij de Oostenrijkse stad Graz. Zijn vader Gustav, een voormalig lid van de Sturmabteilung, was het hoofd van de plaatselijke politie en overleed op 1 december 1972. Zijn moeder Aurelia overleed op 2 augustus 1998. Arnold had een oudere broer Meinhard, geboren op 17 juli 1946 en gestorven bij een auto-ongeluk op 20 mei 1971. Arnold heeft als dienstplichtig militair in 1965 een jaar gediend in het Oostenrijkse leger als tankchauffeur. Hij werd Amerikaans staatsburger in 1983 en haalde een bachelorgraad aan de Universiteit van Wisconsin in International Marketing en Business Administration.
 
 In 1997 werd het voetbalstadion in Graz omgedoopt in Arnold Schwarzenegger Stadion. In december 2005 werd Schwarzeneggers naam echter van de ene dag op de andere verwijderd. Politici uit Graz hadden laten weten dat ze het ongepast vonden om een stadion te noemen naar een voorvechter van de doodstraf. Schwarzenegger reageerde door de toestemming om zijn naam te gebruiken met onmiddellijke ingang in te trekken.
@@ -23,7 +26,8 @@ In 1997 werd het voetbalstadion in Graz omgedoopt in Arnold Schwarzenegger Stadi
 Arnold Schwarzenegger trouwde in 1986 met ex-NBC-televisiejournalist Maria Shriver, een dochter van Sargent Shriver, running mate van democraat George McGovern tijdens de Amerikaanse presidentsverkiezingen in 1972, en Eunice Kennedy Shriver. Zij kregen samen vier kinderen. Schwarzenegger gaf op 16 mei 2011 toe dat hij al tien jaar ook een buitenechtelijk kind heeft met zijn huishoudster.[1] Na zijn gouverneurschap heeft hij zijn vrouw hierover ingelicht, wat ertoe leidde dat de twee uit elkaar gingen.[2] In februari 2011 maakte Schwarzenegger bekend dat hij terug zou keren naar Hollywood, hoewel hij een aantal jaren daarvoor zei geen grote rollen in films meer te ambiëren.[3]
 
 In oktober 2012 bracht Schwarzenegger een autobiografie uit met de titel Total Recall, het grootste gedeelte van het boek gaan over zijn successen in het leven als bodybuilder, acteur en gouverneur."""
-text = """Donald John Trump (New York, 14 juni 1946) is sinds 20 januari 2017 de 45e president van de Verenigde Staten. Trump behoort tot de Republikeinse Partij. Vóór zijn presidentschap had hij nooit eerder een politieke functie vervuld. Van beroep was hij ondernemer, voornamelijk in het vastgoed. Verder is hij schrijver en televisiepersoonlijkheid.
+
+text = """Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten. Trump behoort tot de Republikeinse Partij. Vóór zijn presidentschap had hij nooit eerder een politieke functie vervuld. Van beroep was hij ondernemer, voornamelijk in het vastgoed. Verder is hij schrijver en televisiepersoonlijkheid.
 
 Donald Trump is de zoon van Fred Trump, een vastgoedontwikkelaar uit New York. Toen Donald Trump naar de Wharton School van de Universiteit van Pennsylvania ging, werkte hij al voor het bedrijf van zijn vader en grootmoeder, Elizabeth Trump & Son, de voorloper van The Trump Organization. In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan. Hij kreeg in 1971 de zeggenschap over het bedrijf en veranderde de naam in The Trump Organization. Door zijn promotie-inspanningen, carrière, verschijningen in media en boeken (vaak door ghostwriters geschreven) werd hij een mediapersoonlijkheid in de Verenigde Staten. Trump presenteerde The Apprentice, een Amerikaans televisieprogramma op NBC.
 
@@ -47,6 +51,15 @@ In december 2019 is Trump in staat van beschuldiging gesteld (impeached) door he
 #  In "Peter en Marco vind geel het mooist en blauw het lelijksts" we only catch (marco, vind mooiste, geel) and
 #  (marco, vind lelijkst, blauw) because when we get to Marco the relations have not been finished for Peter.
 #  as a result the values for Peter are removed..
+# text = "Peter en Hendrik vinden geel opmerkelijk, en blauw lelijk"
+# text = "Hij was ondernemer van beroep, voornamelijk in het vastgoed"
+# text = "Piet is groot en Henk is klein"
+# text = "Van beroep was hij ondernemer, voornamelijk in het vastgoed"
+# text = "Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten."
+
+# To do
+# text = "In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan"
+# text = "Vóór zijn presidentschap had hij nooit eerder een politieke functie vervuld."
 doc = nlp(text)
 
 #view_displacy(doc)

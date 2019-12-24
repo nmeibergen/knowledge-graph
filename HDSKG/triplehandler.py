@@ -1,19 +1,6 @@
-from .helperfunctions import set_pos_exceptions
+from .helperfunctions import set_pos_exceptions, index_of
 from copy import copy
 from my_logging import logger
-
-
-def get_triple_first_nouns(sentence_dependencies):
-    # asure not more than one nsubj relation
-    return 1
-
-
-def get_triple_verb(self):
-    pass
-
-
-def get_triple_second_nouns(self):
-    pass
 
 
 class TripleItem:
@@ -97,7 +84,7 @@ class TripleItem:
                     logger.info(f"> Advmod completion: {value}")
                     # We only include the adverb if it contains an important value, such as denials
                     adv_value = self.complete(token_child)
-                    has_important_adv = adv_value in ["niet", "geen"]
+                    has_important_adv = adv_value in ["niet", "geen", "nooit"]
                     if has_important_adv:
                         value = f"{adv_value} {value}"
 
@@ -132,11 +119,13 @@ class TripleItem:
                 # In 1) we have nmod(land, zuid-amerika) and case(zuid-amerika, van)
                 # In 2) we have nmod(bevolking, brazilie) and case(brazilie, van)
                 # In the first we add the van to the 'verb' land (it is identified as verb) and in the second case we
-                # need to complete bevlking van Brazilie, so 'van' should not be added to the verb, instead, here it is
+                # need to complete bevolking van Brazilie, so 'van' should not be added to the verb, instead, here it is
                 # a completion. We thus note that completion should be done if the head of the token we are looking at
                 # is not a verb, for if it is, then case should be appending the verb
-                if token.head.pos_ != "VERB":
-                    value = f"{self.complete(token_child)} {value}"
+
+                # if token.head.pos_ != "VERB":
+                #     value = f"{self.complete(token_child)} {value}"
+                pass
 
         return value
 
@@ -164,7 +153,7 @@ class TripleItem:
         # cop(is, land), case(zuid-amerika, van)
         # For the verb tripleitem: value = is, cop = grootste land, case = met/van
 
-        return f"{value}{cop}{obj}{case}"
+        return f"{value}{cop}{obj}{case}".lower()
 
 
 class Triple:
@@ -252,7 +241,20 @@ def proceed(f):
         if proceed_requested:
             # proceed to call dependency functions on next children
             kwargs["token_head"] = kwargs["token"]
-            for next_child in kwargs["token"].children:
+
+            # Todo:
+            #  Catch multiple occurrences of nsubj and cop
+
+            # The compound is included at the 'start' for it may need to complete verbs before going on to setting the
+            # nouns, e.g.
+            # text = "In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan", verb = "sloot aan", then we can set
+            # noun2 as 1968, where the case "in" is added to "sloot aan", creating: (hij, sloot aan in, 1968)
+
+            dependency_order = ["nsubj", "cop", "compound", "nmod", "obl", "obj"]
+            children = [next_child for next_child in kwargs["token"].children]
+            sorted_children = sorted(children, key=lambda x: index_of(val=x.dep_, in_list=dependency_order, value_if_not_exists=1e4))
+
+            for next_child in sorted_children:
                 next_dependency = next_child.dep_.split(":")[0]
                 proceed_method = getattr(cls, next_dependency, None)
                 if proceed_method is not None:
@@ -261,6 +263,11 @@ def proceed(f):
                     proceed_method(**kwargs)
 
     return wrapper_f
+
+
+def is_cop(token):
+    # A token is defined as cop if it has any dependency pointing to its child with the type cop
+    return any([token_child.dep_ == "cop" for token_child in token.children])
 
 
 class TriplesDoc:
@@ -299,9 +306,15 @@ class TriplesDoc:
 
         return True
 
+    # The rule is that any of the below dependencies can only do something with the token that it is pointing or coming
+    # from, i.e. token and token_head
+
     @proceed
     def nsubj(self, token, *args, **kwargs):
         # returns the noun
+        # Look into starting a new triple when noun1 is not empty.
+        # The below code uses the nsubj to also set noun2 if noun1 is empty, however, I am not sure in what case that
+        # makes sense
         if self.triple.noun1.is_empty():
             self.triple.set_noun1(token)
             return True
@@ -311,31 +324,30 @@ class TriplesDoc:
         return False
 
     def generic_obl(self, token_head, token, *args, **kwargs):
-        # if token_head.pos_ == "VERB":
-        #     # if the second noun already has data, then clearly this is another noun, and we should initiate such
-        #     if self.triple.noun2.is_empty():
-        #         self.triple.set_noun2(token)
-        #     else:
-        #         self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
-        #         self.triple.set_noun2(token)
-        #     return True
-        # else:
-        #     # this indicates that we have another triple with this particular noun
-        #     self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
-        #     self.triple.set_noun2(token)
-        #     return True
-
         # text = "Brazilië is met zijn 8,5 miljoen vierkante kilometer het grootste land van Zuid-Amerika, het beslaat
         # bijna de helft van dit continent."
         # obl(is, miljoen) -> triple(Brazilie, is grootste land met, 8,5 miljoen vierkante kilometer)
         # nmod(land, zuid-amerika) -> triple(Brazilie, is grootste land van, zuid-amerika)
         # thus clearly the obl indicator can create new triples, in this case if the nmod would have come first.
-        if self.triple.noun2.is_empty():
-            self.triple.set_noun2(token)
-        else:
-            self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
-            self.triple.set_noun2(token)
-        return True
+        #if is_cop(token_head):
+
+        # Applying the obl relation only makes sense if the value we are pointing at is a NOUN or NUM
+        if token.pos_ == "NOUN" or token.pos_ == "NUM":
+            if self.triple.noun2.is_empty():
+                self.triple.set_noun2(token)
+            elif token_head.pos_ == "NOUN":
+                # text = "Van beroep was hij ondernemer, voornamelijk in het vastgoed"
+                # cop(ondernemer, was), nsubj(ondernemer, hij) -> (hij, was, ondernemer)
+                # but also: (hij, was ondernemer van, beroep)
+                # --> obl(ondernemer, beroep), therefore
+                self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+                self.triple.verb.set_cop(token_head)
+                self.triple.set_noun2(token)
+            else:
+                self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+                self.triple.set_noun2(token)
+            return True
+        return False
 
     @proceed
     def obl(self, token_head, token, *args, **kwargs):
@@ -358,15 +370,28 @@ class TriplesDoc:
 
     @proceed
     def nmod(self, token_head, token, *args, **kwargs):
+        # Todo:
+        #  Identify whether this is really a dependency we are interested in taking into account...
+
         # We will not include PRON
         if token.pos_ != "PRON":
             if token_head.pos_ == "VERB":
                 self.triple.set_noun2(token)
                 return True  # we need to be able to add the case
             elif token_head.pos_ == "NOUN":
-                self.triple.add_to_last_noun(token)
-                # the noun has been modified, now proceeding is stopped
-                return False
+                # The last noun may not be set, for example in the case of a cop dependency, e.g.:
+                # "Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten"
+                # cop(president, is) and nmod(president, verenigde)
+                # When we enter this nmod, it should be functioning as an obl as we want to create the triple:
+                #  (trump, is de 45e president van, Verenigde Staten)
+                if self.triple.last_noun is not None:
+                    # the noun has been modified, now proceeding is stopped
+                    self.triple.add_to_last_noun(token)
+                    return False
+                else:
+                    self.generic_obl(token_head, token, *args, **kwargs)
+                    return True
+
         # if token_head.pos_ == "VERB":
         #     return self.generic_obl(token_head, token, *args, **kwargs)
 
@@ -414,7 +439,12 @@ class TriplesDoc:
 
     @proceed
     def cop(self, token_head, token, *args, **kwargs):
+
         if token.pos_ == "VERB":
+            # Todo:
+            #  Catch the case in which we have no noun1 set yet at this point.. should be the case! Furthemore we have
+            #  set to always first perform nsubj followed by cop, and the nsubj should set noun1.
+
             # "Peter en Hendrik vinden geel mooi, en blauw lelijk"
             # cop(mooi, vinden) -> verb1 = vinden mooi
             # conj(mooi, lelijk) -> verb2 = vinden lelijk
@@ -432,8 +462,28 @@ class TriplesDoc:
                 self.triple.set_verb(token)
                 self.triple.verb.set_cop(token_head)
             else:
+                # for example:
+                # text = "Van beroep was hij ondernemer"
+                # cop(ondernemer, was)
+                # obl(ondernemer, beroep)
+
+                # triple(hij, was, ondernemer)
+                self.triple.set_verb(token)
                 self.triple.set_noun2(token_head)
+
+                # triple(hij, was ondernemer van, beroep)
+                self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+                self.triple.verb.set_cop(token_head)
+
+                # Todo:
+                #  Check whether it is generically true that we are more interested in the triple
+                #  (hij, was van beroep, ondernemer). If so, we need to find a way to incorporate this approach..
+                #  It would mean that the obl relation in this case adds something to the verb instead of to the noun.
             return True
+        else:
+            # If we are pointing with cop to a word that is not a VERB, than clearly something has gone wrong in the NLP
+            # model, as this should always be a VERB and we stop the process here.
+            return False
 
     @proceed
     def advmod(self, token_head, token, *args, **kwargs):
