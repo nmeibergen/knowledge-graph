@@ -1,8 +1,21 @@
 import spacy
 from HDSKG.triplehandler import TriplesDoc
 from HDSKG.helperfunctions import view_displacy
+import stanfordnlp
+from spacy_stanfordnlp import StanfordNLPLanguage
+from my_logging import logger
 
-nlp = spacy.load('nl_core_news_sm')
+nlp_model = "stanford"
+
+nlp = None
+if nlp_model == "spacy":
+    nlp = spacy.load('nl_core_news_sm')
+elif nlp_model == "stanford":
+    snlp = stanfordnlp.Pipeline(lang="nl")
+    nlp = StanfordNLPLanguage(snlp)
+else:
+    logger("Incorrect nlp model has been chosen. Either select 'stanford' or 'spacy'.")
+    exit()
 
 #text = "webkit is developed by Intel at the Intel Open Source Technology Center."
 text = "webkit is ontwikkeld door Intel, aan de Intel Open Source Technology Center. Pieter houdt niet altijd van appels. Ester is groot en Linda is niet klein. Dementie is echter nog niet verholpen."
@@ -27,7 +40,7 @@ Arnold Schwarzenegger trouwde in 1986 met ex-NBC-televisiejournalist Maria Shriv
 
 In oktober 2012 bracht Schwarzenegger een autobiografie uit met de titel Total Recall, het grootste gedeelte van het boek gaan over zijn successen in het leven als bodybuilder, acteur en gouverneur."""
 
-text = """Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten. Trump behoort tot de Republikeinse Partij. Vóór zijn presidentschap had hij nooit eerder een politieke functie vervuld. Van beroep was hij ondernemer, voornamelijk in het vastgoed. Verder is hij schrijver en televisiepersoonlijkheid.
+text = """Donald John Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten. Trump behoort tot de Republikeinse Partij. Vóór zijn presidentschap had hij nooit eerder een politieke functie vervuld. Van beroep was hij ondernemer, voornamelijk in het vastgoed. Verder is hij schrijver en televisiepersoonlijkheid.
 
 Donald Trump is de zoon van Fred Trump, een vastgoedontwikkelaar uit New York. Toen Donald Trump naar de Wharton School van de Universiteit van Pennsylvania ging, werkte hij al voor het bedrijf van zijn vader en grootmoeder, Elizabeth Trump & Son, de voorloper van The Trump Organization. In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan. Hij kreeg in 1971 de zeggenschap over het bedrijf en veranderde de naam in The Trump Organization. Door zijn promotie-inspanningen, carrière, verschijningen in media en boeken (vaak door ghostwriters geschreven) werd hij een mediapersoonlijkheid in de Verenigde Staten. Trump presenteerde The Apprentice, een Amerikaans televisieprogramma op NBC.
 
@@ -51,21 +64,61 @@ In december 2019 is Trump in staat van beschuldiging gesteld (impeached) door he
 #  In "Peter en Marco vind geel het mooist en blauw het lelijksts" we only catch (marco, vind mooiste, geel) and
 #  (marco, vind lelijkst, blauw) because when we get to Marco the relations have not been finished for Peter.
 #  as a result the values for Peter are removed..
-# text = "Peter en Hendrik vinden geel opmerkelijk, en blauw lelijk"
+#text = "Peter en Hendrik vinden geel opmerkelijk, en blauw lelijk"
 # text = "Hij was ondernemer van beroep, voornamelijk in het vastgoed"
 # text = "Piet is groot en Henk is klein"
 # text = "Van beroep was hij ondernemer, voornamelijk in het vastgoed"
 # text = "Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten."
+# text = "Donald John Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten."
+#text = "Trump behoort tot de Republikeinse Partij"
+# text = "Op 6 januari 2017 werd hij bevestigd als president door het Amerikaans Congres en op 20 januari 2017 werd hij beëdigd"
 
-# To do
-# text = "In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan"
-# text = "Vóór zijn presidentschap had hij nooit eerder een politieke functie vervuld."
-doc = nlp(text)
+# Todo
+#  text = "Hij kreeg in 1971 de zeggenschap over het bedrijf en veranderde de naam in The Trump Organization"
+#   -> make sure that the object (het bedrijf) is also included after the conj dependency, so for the changing name part!
+#  text = "In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan"  # Incorrect dependency tags :(
 
-#view_displacy(doc)
-triples = TriplesDoc(doc=doc)
-triples()
+# Todo:
+#  we might investigate using the obj as the indicator of the subject of triples, or as a meta tag, something like that. For example:
+#  "Hij kreeg in 1971 de zeggenschap over het bedrijf en veranderde de naam in The Trump Organization" :
+#  here the subject is 'het bedrijf' and related to that we have:
+#   (hij, kreeg, zeggenschap)
+#   (hij, kreeg zeggenschap in, 1971)
+#   (hij, veranderde, naam)
+#   (hij, verandere naam in, trump organization)
 
-print(triples)
+# Todo:
+#  "Op 6 januari 2017 werd hij bevestigd als president door het Amerikaans Congres en op 20 januari 2017 werd hij beëdigd."
+#  (hij, werd bevestigd op, 6 januari 2017)
+#  (hij, werd beëdigd op, 20 januari 2017)
 
-x = 1
+# Todo:
+#  "In december 2019 is Trump in staat van beschuldiging gesteld (impeached) door het Huis van Afgevaardigden voor machtsmisbruik en het tegenwerken van het Congres in de Oekraïne-affaire."
+#  (trump, is gesteld in staat van in, beschuldiging)
+#  (trump, impeached door, huis van afgevaardigden voor machtsmisbruik)
+#  (trump, impeached door, tegenwerken van congres in oekraïne-affaire.[1)
+#  (senaat, moet oordelen over, hier)
+
+# Todo:
+#  (hij, sloot aan bedrijf bij, vaders zijn)
+#  Het woord 'zijn' refereert naar 'hij'. Op deze manier zijn de triple elementen niet onafhankelijk. Als een andere triple - die gaat over een ander persoon dan trump - nu ook 'zijn vader' heeft bedoelen we dus eigenlijk twee andere vaders...
+
+#text = "In eerste stadium van zijn campagne bleek hij zeer populair te zijn, dit tot grote verontrusting van de leiders van de Republikeinse Partij"
+
+# text = "Wij vinden blauwe en gele bloemen mooi en zwarte paarden lelijk"
+# text = "Wij vinden blauwe en gele bloemen mooi en liefdevol"
+# text = "Wij wandelden en renden door de straat"
+# text = "Verder is hij schrijver en televisiepersoonlijkheid en acteur"
+# text = "Hij kreeg in 1971 de zeggenschap over het bedrijf en veranderde de naam in The Trump Organization."
+# text = "Hij kreeg in 1971 de zeggenschap over het bedrijf en veranderde de naam in The Trump Organization"
+text = "Op 8 november 2016 won hij de presidentsverkiezingen en werd hij president-elect van de Verenigde Staten."
+if nlp is not None:
+    doc = nlp(text)
+
+    #view_displacy(doc)
+    triples = TriplesDoc(doc=doc)
+    triples()
+
+    print(triples)
+
+    x = 1

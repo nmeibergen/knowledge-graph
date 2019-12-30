@@ -4,71 +4,69 @@ from my_logging import logger
 
 
 class TripleItem:
-    value = ""
-    cop = ""
-    obj = ""
-    case = ""
+    value = None
+    last = None
 
-    def set(self, token):
+    def generic_set(self, token, sub_item_name):
         # before adding the item, we complete it
         completed_value = self.complete(token)
         logger.info(f"Set triple item value: {completed_value}")
-        self.value = completed_value
-    
-    def set_cop(self, token):
-        completed_value = self.complete(token)
-        logger.info(f"Set triple item cop: {completed_value}")
-        self.cop = completed_value
+        setattr(self, sub_item_name, [completed_value])
+        x=1
 
-    def set_obj(self, token):
-        completed_value = self.complete(token)
-        logger.info(f"Set triple item obj: {completed_value}")
-        self.obj = completed_value
+    def generic_add(self, token, sub_item_name):
+        current_val = getattr(self, sub_item_name)
+        current_val.append(self.complete(token))
+        x=1
 
-    def set_case(self, token):
-        completed_value = self.complete(token)
-        logger.info(f"Set triple item case: {completed_value}")
-        self.case = completed_value
+    def set_value(self, token):
+        # # before adding the item, we complete it
+        # completed_value = self.complete(token)
+        # logger.info(f"Set triple item value: {completed_value}")
+        # self.value = [completed_value]
 
-    def prepend(self, token):
-        # before prepending the item, we complete it
-        completed_value = self.complete(token)
-        logger.info(f"Prepend triple item value: {completed_value}")
-        if self.value != "":
-            self.value = " " + self.value
-        self.value = f"{completed_value}{self.value}"
+        self.generic_set(token, sub_item_name="value")
 
-    def append(self, token):
-        # before appending the item, we complete it
-        completed_value = self.complete(token)
-        logger.info(f"Append triple item value: {completed_value}")
-        if self.value != "":
-            self.value = self.value + " "
-        self.value = f"{self.value}{completed_value}"
+        # Todo: This could be a decorator:
+        self.last = "value"
+
+    def add_value(self, token):
+        # Add a new token to the tripleitem, e.g.:
+        # Paul en Pieter vinden geel mooi
+        # Here the first noun should be the TripleItem [Paul, Pieter] so that we get the Triple:
+        # ([Paul, Pieter], [vinden mooi], [geel]) -> (Paul, vinden mooi, geel) and (Pieter, vinden mooi, geel)
+        self.generic_add(token, "value")
+
+    def extend(self, token):
+        if self.value is None:
+            self.set_value(token)
+        else:
+            completed_value = self.complete(token)
+            self.value[-1].extend(completed_value)
 
     def complete(self, token):
-        value = token.text
-        logger.info(f"Start completion for token: {value}")
+        value = [token]
+        logger.info(f"Start completion for token: {value[0].text}")
         for token_child in token.children:
             dependency = token_child.dep_.split(":")[0]
             if dependency == "compound":
                 logger.info(f"> Compound completion: {value}")
                 # "Zij lopen en rennen precies in de maat"
                 # compound(in, de), compound(in, maat) -> in de maat
-                value = f"{value} {self.complete(token_child)}"
+                value.extend(self.complete(token_child))
 
             if dependency == "flat":
                 logger.info(f"> Flat completion: {value}")
                 # "webkit is ontwikkeld door Intel, aan de Intel Open Source Technology Center."
                 # flat(Intel, Open), flat(Intel, Source), etc.
-                value = f"{value} {self.complete(token_child)}"
+                value.extend(self.complete(token_child))
 
             if dependency == "amod":
                 logger.info(f"> Amod completion: {value}")
                 # adjective modifier = toevoeging van bijvoeglijk naamwoord
                 # "De langdurige zorg blijkt zeer goed te werken"
                 # amod(zorg, langdurige)
-                value = f"{self.complete(token_child)} {value}"
+                value.extend(self.complete(token_child))
 
             if dependency == "advmod":
                 # adverb = bijwoord, this relation may not be highly important to include
@@ -86,27 +84,33 @@ class TripleItem:
                     adv_value = self.complete(token_child)
                     has_important_adv = adv_value in ["niet", "geen", "nooit"]
                     if has_important_adv:
-                        value = f"{adv_value} {value}"
+                        value = value.extend(adv_value)
 
             if dependency == "aux":
                 if token.pos_ == "VERB":
                     logger.info(f"> Aux completion: {value}")
                     # "webkit is ontwikkeld door Intel, aan de Intel Open Source Technology Center."
                     # aux(ontwikkeld, is)
-                    value = f"{self.complete(token_child)} {value}"
+                    value.extend(self.complete(token_child))
 
             if dependency == "mark":
                 # "De langdurige zorg blijkt zeer goed te werken"
                 # mark(werken, te)
                 logger.info(f"> Mark completion: {value}")
-                value = f"{self.complete(token_child)} {value}"
+                value.extend(self.complete(token_child))
+
+            if dependency == "fixed":
+                value.extend(self.complete(token_child))
 
             if dependency == "appos":
                 if token_child.pos_ == "NUM":
                     # text = "Afwisselende democratische en autocratische regeringen volgden elkaar op tot in de jaren
                     # 80 van de twintigste eeuw"
                     # appos(jaren, 80)
-                    value = f"{value} {self.complete(token_child)}"
+                    value.extend(self.complete(token_child))
+
+            if dependency == "nmod":
+                value.extend(self.complete(token_child))
 
             if dependency == "case":
                 # We need to handle a special case here:
@@ -123,29 +127,136 @@ class TripleItem:
                 # a completion. We thus note that completion should be done if the head of the token we are looking at
                 # is not a verb, for if it is, then case should be appending the verb
 
-                # if token.head.pos_ != "VERB":
-                #     value = f"{self.complete(token_child)} {value}"
-                pass
+                if token.dep_ == "nmod":
+                    value.extend(self.complete(token_child))
 
         return value
 
     def is_empty(self):
-        if self.value == "":
+        if self.value is None:
             return True
         else:
             return False
 
+    def get_last_method(self, method_type="set"):
+        if method_type is not "set" and method_type is not "add":
+            logger.error("method_type must be 'set' or 'add'.")
+            exit()
+
+        if self.last is not None:
+            assert(isinstance(self.last, str))
+            last_method = getattr(self, method_type + "_" + self.last, None)
+            return last_method
+
+    def set_last(self, token):
+        last_method = self.get_last_method(method_type="set")
+        if last_method is not None:
+            last_method(self, token)
+        else:
+            logger.info(f"Last method could not be identified: '{self.last}'")
+
+    def add_last(self, token):
+        last_method = self.get_last_method(method_type="add")
+        if last_method is not None:
+            last_method(token)
+        else:
+            logger.info(f"Last method could not be identified: '{self.last}'")
+
+    @staticmethod
+    def sorted_token_values(tokens):
+        assert (isinstance(tokens, list) or tokens is None)
+        if tokens is not None and len(tokens) > 0:
+            sorted_vals = sorted(tokens, key=lambda x: x.i)
+            sorted_strings = [token.text.lower() for token in sorted_vals]
+            return ' '.join(sorted_strings)
+        else:
+            return ""
+    
+    @staticmethod
+    def subitem_to_string(sub_item):
+        if sub_item is not None:
+            sorted_vals = [TripleItem.sorted_token_values(tokens) for tokens in sub_item]
+            if len(sorted_vals) > 1:
+                sorted_vals = "[" + ', '.join(sorted_vals) + "]"
+            else:
+                sorted_vals = sorted_vals[0]
+            return sorted_vals
+        else:
+            return ""
+        
+
+class Noun(TripleItem):
+    nmod = None
+
+    def set_nmod(self, token):
+        self.generic_set(token, "nmod")
+        self.last = "nmod"
+
+    def add_nmod(self, token):
+        self.generic_add(token, "nmod")
+        self.last = "nmod"
+
     def __str__(self):
-        value = self.value
-        case = self.case
-        cop = self.cop
-        obj = self.obj
-        if case != "":
-            case = f" {case}"
-        if cop != "":
-            cop = f" {cop}"
-        if obj != "":
-            obj = f" {obj}"
+
+        sorted_values = self.subitem_to_string(self.value)
+        sorted_nmod = self.subitem_to_string(self.nmod)
+
+        if sorted_nmod != "":
+            sorted_nmod = " " + sorted_nmod
+
+        return f"{sorted_values}{sorted_nmod}"
+
+
+class Verb(TripleItem):
+    cop = None
+    obj = None
+    case = None
+    xcomp = None
+
+    def set_cop(self, token):
+        self.generic_set(token, "cop")
+        self.last = "cop"
+
+    def set_obj(self, token):
+        self.generic_set(token, "obj")
+        self.last = "obj"
+
+    def set_case(self, token):
+        self.generic_set(token, "case")
+        self.last = "case"
+
+    def set_xcomp(self, token):
+        self.generic_set(token, "xcomp")
+        self.last = "xcomp"
+
+    def add_cop(self, token):
+        self.generic_add(token, "cop")
+        self.last = "cop"
+
+    def add_obj(self, token):
+        self.generic_add(token, "obj")
+        self.last = "obj"
+
+    def add_case(self, token):
+        self.generic_add(token, "case")
+        self.last = "case"
+
+    def add_xcomp(self, token):
+        self.generic_add(token, "xcomp")
+        self.last = "xcomp"
+
+    def __str__(self):
+        sorted_values = self.subitem_to_string(self.value)
+        sorted_case = self.subitem_to_string(self.case)
+        sorted_cop = self.subitem_to_string(self.cop)
+        sorted_obj = self.subitem_to_string(self.obj)
+
+        if sorted_case != "":
+            sorted_case = " " + sorted_case
+        if sorted_cop != "":
+            sorted_cop = " " + sorted_cop
+        if sorted_obj != "":
+            sorted_obj = " " + sorted_obj
 
         # order of words:
         # text = "Brazilië is met zijn 8,5 miljoen vierkante kilometer het grootste land van Zuid-Amerika, het beslaat
@@ -153,24 +264,25 @@ class TripleItem:
         # cop(is, land), case(zuid-amerika, van)
         # For the verb tripleitem: value = is, cop = grootste land, case = met/van
 
-        return f"{value}{cop}{obj}{case}".lower()
+        return f"{sorted_values}{sorted_cop}{sorted_obj}{sorted_case}".lower()
 
 
 class Triple:
 
     last_noun = None
     last_verb = None
+    last = None
 
     # at initialization you may provide strings
     def __init__(self, noun1=None, verb=None, noun2=None):
         logger.info(f"Initiate new triple")
-        assert(type(noun1).__name__ == "TripleItem" or noun1 is None)
-        assert(type(verb).__name__ == "TripleItem" or verb is None)
-        assert(type(noun2).__name__ == "TripleItem" or noun2 is None)
+        assert(type(noun1).__name__ == "Noun" or noun1 is None)
+        assert(type(verb).__name__ == "Verb" or verb is None)
+        assert(type(noun2).__name__ == "Noun" or noun2 is None)
 
-        self.noun1 = TripleItem()
-        self.verb = TripleItem()
-        self.noun2 = TripleItem()
+        self.noun1 = Noun()
+        self.verb = Verb()
+        self.noun2 = Noun()
 
         if noun1 is not None:
             logger.info(f"> init with noun1: {noun1.value}")
@@ -183,28 +295,28 @@ class Triple:
             self.noun2 = copy(noun2)
 
     def set_noun1(self, token):
-        self.noun1.set(token)
+        self.noun1.set_value(token)
         self.last_noun = self.noun1
+        self.last = self.noun1
 
     def set_verb(self, token):
-        self.verb.set(token)
+        self.verb.set_value(token)
         self.last_verb = self.verb
+        self.last = self.verb
 
     def set_noun2(self, token):
-        self.noun2.set(token)
+        self.noun2.set_value(token)
         self.last_noun = self.noun2
+        self.last = self.noun2
 
-    def add_to_last_noun(self, token, add_type="append"):
-        if add_type == "append":
-            self.last_noun.append(token)
-        elif add_type == "prepend":
-            self.last_noun.prepend(token)
+    def add_to_last_noun(self, token):
+        self.last_noun.extend(token)
 
-    def add_to_last_verb(self, token, add_type="append"):
-        if add_type == "append":
-            self.last_verb.append(token)
-        elif add_type == "prepend":
-            self.last_verb.prepend(token)
+    def add_to_last_verb(self, token):
+        self.last_verb.extend(token)
+
+    def set_to_last(self, token):
+        self.last
     
     def is_valid(self):
         if self.noun1.is_empty() or self.verb.is_empty() or self.noun2.is_empty():
@@ -250,7 +362,10 @@ def proceed(f):
             # text = "In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan", verb = "sloot aan", then we can set
             # noun2 as 1968, where the case "in" is added to "sloot aan", creating: (hij, sloot aan in, 1968)
 
-            dependency_order = ["nsubj", "cop", "compound", "nmod", "obl", "obj"]
+            # The obj needs to come before the obl, because the obj induces two triples, one where it is simply the
+            # second noun and another were it is added as obj to the verb.
+
+            dependency_order = ["nsubj", "cop", "compound", "xcomp", "obj", "nmod", "obl", "conj"]
             children = [next_child for next_child in kwargs["token"].children]
             sorted_children = sorted(children, key=lambda x: index_of(val=x.dep_, in_list=dependency_order, value_if_not_exists=1e4))
 
@@ -285,13 +400,13 @@ class TriplesDoc:
     def __call__(self, *args, **kwargs):
         # triple builder
         for token in self.doc:
-            if token.dep_ == "ROOT":
+            if token.dep_.lower() == "root":
                 self.root(token=token)
 
     def _start_new_triple(self, noun1=None, verb=None, noun2=None):
         triple = Triple(noun1=noun1, verb=verb, noun2=noun2)
         self.triples.append(triple)
-        self.triple = triple # set new triple in current use
+        self.triple = triple  # set new triple in current use
 
     @proceed
     def root(self, token, *args, **kwargs):
@@ -305,9 +420,6 @@ class TriplesDoc:
             self.triple.set_noun2(token)
 
         return True
-
-    # The rule is that any of the below dependencies can only do something with the token that it is pointing or coming
-    # from, i.e. token and token_head
 
     @proceed
     def nsubj(self, token, *args, **kwargs):
@@ -324,30 +436,37 @@ class TriplesDoc:
         return False
 
     def generic_obl(self, token_head, token, *args, **kwargs):
-        # text = "Brazilië is met zijn 8,5 miljoen vierkante kilometer het grootste land van Zuid-Amerika, het beslaat
-        # bijna de helft van dit continent."
-        # obl(is, miljoen) -> triple(Brazilie, is grootste land met, 8,5 miljoen vierkante kilometer)
-        # nmod(land, zuid-amerika) -> triple(Brazilie, is grootste land van, zuid-amerika)
-        # thus clearly the obl indicator can create new triples, in this case if the nmod would have come first.
-        #if is_cop(token_head):
-
         # Applying the obl relation only makes sense if the value we are pointing at is a NOUN or NUM
-        if token.pos_ == "NOUN" or token.pos_ == "NUM":
-            if self.triple.noun2.is_empty():
-                self.triple.set_noun2(token)
-            elif token_head.pos_ == "NOUN":
-                # text = "Van beroep was hij ondernemer, voornamelijk in het vastgoed"
-                # cop(ondernemer, was), nsubj(ondernemer, hij) -> (hij, was, ondernemer)
-                # but also: (hij, was ondernemer van, beroep)
-                # --> obl(ondernemer, beroep), therefore
-                self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
-                self.triple.verb.set_cop(token_head)
-                self.triple.set_noun2(token)
-            else:
-                self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
-                self.triple.set_noun2(token)
-            return True
-        return False
+        # if token.pos_ == "NOUN" or token.pos_ == "NUM":
+        #     if self.triple.noun2.is_empty():
+        #         self.triple.set_noun2(token)
+        #     elif token_head.pos_ == "NOUN":
+        #         # text = "Van beroep was hij ondernemer, voornamelijk in het vastgoed"
+        #         # cop(ondernemer, was), nsubj(ondernemer, hij) -> (hij, was, ondernemer)
+        #         # but also: (hij, was ondernemer van, beroep)
+        #         # --> obl(ondernemer, beroep), therefore
+        #         self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+        #         self.triple.verb.set_cop(token_head)
+        #         self.triple.set_noun2(token)
+        #     else:
+        #         self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+        #         self.triple.set_noun2(token)
+        #     return True
+        # return False
+        if self.triple.noun2.is_empty():
+            self.triple.set_noun2(token)
+        elif token_head.pos_ == "NOUN":
+            # text = "Van beroep was hij ondernemer, voornamelijk in het vastgoed"
+            # cop(ondernemer, was), nsubj(ondernemer, hij) -> (hij, was, ondernemer)
+            # but also: (hij, was ondernemer van, beroep)
+            # --> obl(ondernemer, beroep), therefore
+            self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+            self.triple.verb.set_cop(token_head)
+            self.triple.set_noun2(token)
+        else:
+            self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+            self.triple.set_noun2(token)
+        return True
 
     @proceed
     def obl(self, token_head, token, *args, **kwargs):
@@ -359,6 +478,16 @@ class TriplesDoc:
         # example:
         # she gave me a raise.
         # obj(gave, raise) -> the verb is 'gave raise'
+
+        # Here we see two triples:
+        # 1. (she, gave, raise)
+        # 2. (she, gave raise, me)
+        self.triple.set_noun2(token)
+        self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+
+        # 2.
+        self.triple.verb.set_obj(token)
+        return True
         # However we see that the model does not accurately predicts the obj, instead it very often should be the obl
         # e.g. text = "De oorspronkelijke bevolking van Brazilië bestond uit indianen die de tropische kuststrook, het
         # Paraná- en het Amazonebekken bewoonden."
@@ -366,81 +495,100 @@ class TriplesDoc:
         #   the triple (oorspronkelijke bevolking brazilie, bestond uit, indianen)
         # self.triple.noun2.set_obj(token)
         # return True
-        return self.generic_obl(token_head, token, *args, **kwargs)
+        #return self.generic_obl(token_head, token, *args, **kwargs)
 
-    @proceed
-    def nmod(self, token_head, token, *args, **kwargs):
-        # Todo:
-        #  Identify whether this is really a dependency we are interested in taking into account...
-
-        # We will not include PRON
-        if token.pos_ != "PRON":
-            if token_head.pos_ == "VERB":
-                self.triple.set_noun2(token)
-                return True  # we need to be able to add the case
-            elif token_head.pos_ == "NOUN":
-                # The last noun may not be set, for example in the case of a cop dependency, e.g.:
-                # "Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten"
-                # cop(president, is) and nmod(president, verenigde)
-                # When we enter this nmod, it should be functioning as an obl as we want to create the triple:
-                #  (trump, is de 45e president van, Verenigde Staten)
-                if self.triple.last_noun is not None:
-                    # the noun has been modified, now proceeding is stopped
-                    self.triple.add_to_last_noun(token)
-                    return False
-                else:
-                    self.generic_obl(token_head, token, *args, **kwargs)
-                    return True
-
-        # if token_head.pos_ == "VERB":
-        #     return self.generic_obl(token_head, token, *args, **kwargs)
+    # @proceed
+    # def nmod(self, token_head, token, *args, **kwargs):
+    #     # Todo:
+    #     #  Identify whether this is really a dependency we are interested in taking into account...
+    #
+    #     # We will not include PRON
+    #     if token.pos_ != "PRON":
+    #         if token_head.pos_ == "VERB":
+    #             self.triple.set_noun2(token)
+    #             return True  # we need to be able to add the case
+    #         elif token_head.pos_ == "NOUN":
+    #             # The last noun may not be set, for example in the case of a cop dependency, e.g.:
+    #             # "Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten"
+    #             # cop(president, is) and nmod(president, verenigde)
+    #             # When we enter this nmod, it should be functioning as an obl as we want to create the triple:
+    #             #  (trump, is de 45e president van, Verenigde Staten)
+    #             if self.triple.last_noun is not None:
+    #                 # the noun has been modified, now proceeding is stopped
+    #                 self.triple.add_to_last_noun(token)
+    #                 return False
+    #             else:
+    #                 self.generic_obl(token_head, token, *args, **kwargs)
+    #                 return True
+    #
+    #     # if token_head.pos_ == "VERB":
+    #     #     return self.generic_obl(token_head, token, *args, **kwargs)
 
     @proceed
     def conj(self, token_head, token, *args, **kwargs):
 
-        if token_head.pos_ == "VERB" and token.pos_ == "VERB":
-            # This means that we start some new relationship for the first noun, e.g.
-            # text = "De Portugese Kroon breidde haar heerschappij echter niet uit en in 1808 verhuisde de Portugese
-            # hofhouding van Lissabon naar Rio de Janeiro"
-            # > Here "De Portugese KLroon" did two things: 1. they "breide uit" and 2. they "verhuisde"
+        child_deps = [token_child.dep_.split(":")[0] for token_child in token.children]
+        head_deps = [token_child.dep_.split(":")[0] for token_child in token_head.children]
+        if token.pos_ == "VERB" and (any([dep == "nsubj" or
+                                          dep == "aux" or
+                                          dep == "obl" or
+                                          dep == "obj"
+                                          for dep in child_deps])):
+            # This conj functions like the start of a new triple, more like a parataxis
             self._start_new_triple(noun1=self.triple.noun1)
             self.triple.set_verb(token)
-            return True
-        elif any([token_child.dep_ == "cop" for token_child in token_head.children]):
-            # "Peter en Hendrik vinden geel mooi, en blauw lelijk"
-            # cop(mooi, vinden)
-            # conj(mooi, lelijk)
-            # we already have the triple (Peter, vinden mooi, geel), now we pass onto the next triple
-            # (Peter, vinden mooi, ..). noting that mooi and lelijk are the case part, we immediately replace the case
-            # with lelijk
-            self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
-            self.triple.verb.set_cop(token)
-            return True
-        elif any([token_child.dep_ == "nsubj" for token_child in token.children]):
-            # First we note that if there is a nsubj dependency from this token, then this is not a conjoint but the
-            # start of a new triple, e.g. Ester is groot en Linda is klein. Here groot and klein are connected with
-            # conj, but from both groot and klein we have an nsubj relation indicating two subjects
+        elif token_head.pos_ == "VERB":
+            self.triple.verb.add_last(token)
+        elif any([dep == "nsubj" for dep in head_deps]):
+            self.triple.noun1.add_last(token)
+        else:
+            self.triple.noun2.add_last(token)
+        return True
 
-            # start new triple
-            self._start_new_triple()
-            self.triple.set_noun2(token)
-            return True
-        elif "dependency_trace" in kwargs:
-            trace = kwargs["dependency_trace"]
-            if "nsubj" in trace:
-                self._start_new_triple(verb=self.triple.verb, noun2=self.triple.noun2)
-                self.triple.set_noun1(token)
-            else:
-                self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
-                self.triple.set_noun2(token)
-            return True
+        #
+        # if token_head.pos_ == "VERB" and token.pos_ == "VERB":
+        #     # This means that we start some new relationship for the first noun, e.g.
+        #     # text = "De Portugese Kroon breidde haar heerschappij echter niet uit en in 1808 verhuisde de Portugese
+        #     # hofhouding van Lissabon naar Rio de Janeiro"
+        #     # > Here "De Portugese KLroon" did two things: 1. they "breide uit" and 2. they "verhuisde"
+        #     self._start_new_triple(noun1=self.triple.noun1)
+        #     self.triple.set_verb(token)
+        #     return True
+        # elif any([token_child.dep_ == "cop" for token_child in token_head.children]):
+        #     # "Peter en Hendrik vinden geel mooi, en blauw lelijk"
+        #     # cop(mooi, vinden)
+        #     # conj(mooi, lelijk)
+        #     # we already have the triple (Peter, vinden mooi, geel), now we pass onto the next triple
+        #     # (Peter, vinden mooi, ..). noting that mooi and lelijk are the case part, we immediately replace the case
+        #     # with lelijk
+        #     self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+        #     self.triple.verb.set_cop(token)
+        #     return True
+        # elif any([token_child.dep_ == "nsubj" for token_child in token.children]):
+        #     # First we note that if there is a nsubj dependency from this token, then this is not a conjoint but the
+        #     # start of a new triple, e.g. Ester is groot en Linda is klein. Here groot and klein are connected with
+        #     # conj, but from both groot and klein we have an nsubj relation indicating two subjects
+        #
+        #     # start new triple
+        #     self._start_new_triple()
+        #     self.triple.set_noun2(token)
+        #     return True
+        # elif "dependency_trace" in kwargs:
+        #     trace = kwargs["dependency_trace"]
+        #     if "nsubj" in trace:
+        #         self._start_new_triple(verb=self.triple.verb, noun2=self.triple.noun2)
+        #         self.triple.set_noun1(token)
+        #     else:
+        #         self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+        #         self.triple.set_noun2(token)
+        #     return True
 
-        return False
+        return True
 
     @proceed
     def cop(self, token_head, token, *args, **kwargs):
 
-        if token.pos_ == "VERB":
+        if token.pos_ == "VERB" or token.pos_ == "AUX":
             # Todo:
             #  Catch the case in which we have no noun1 set yet at this point.. should be the case! Furthemore we have
             #  set to always first perform nsubj followed by cop, and the nsubj should set noun1.
@@ -468,12 +616,22 @@ class TriplesDoc:
                 # obl(ondernemer, beroep)
 
                 # triple(hij, was, ondernemer)
-                self.triple.set_verb(token)
-                self.triple.set_noun2(token_head)
+                self.triple.verb.set_value(token)
 
-                # triple(hij, was ondernemer van, beroep)
+                # Note that noun2 has already been set at this stage for it is the token we are coming from, which is
+                # already handled and set as noun2
+                for_cop = self.triple.noun2.value
                 self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
-                self.triple.verb.set_cop(token_head)
+                self.triple.verb.cop = copy(for_cop)
+                # self.triple.verb.set_cop(for_cop)
+
+
+                # self.triple.set_verb(token)
+                # self.triple.set_noun2(token_head)
+                #
+                # # triple(hij, was ondernemer van, beroep)
+                # self._start_new_triple(noun1=self.triple.noun1, verb=self.triple.verb)
+                # self.triple.verb.set_cop(token_head)
 
                 # Todo:
                 #  Check whether it is generically true that we are more interested in the triple
@@ -487,7 +645,7 @@ class TriplesDoc:
 
     @proceed
     def advmod(self, token_head, token, *args, **kwargs):
-        #self.triple.verb.append(token)
+        #self.triple.verb.extend(token)
         return False
 
     @proceed
@@ -500,8 +658,8 @@ class TriplesDoc:
         # Here blijkt is a verb with Verbform=Inf, thus it functions as a Noun, and we have set it as a Noun with the
         # exceptions. In this case we thus need to refer to the tag, and in particular the first item when splitting on
         # the |. This indicates V, for verb.
-        if token_head.pos_ == "VERB" and token.pos_ == "VERB":
-            self.triple.verb.append(token)
+        if token_head.pos_ == "VERB":# and token.pos_ == "VERB":
+            self.triple.verb.extend(token)
             return True
 
     @proceed
@@ -509,7 +667,7 @@ class TriplesDoc:
         if token_head.pos_ is not "VERB":
             # the aux may also function as a verb completer, if so the verb previously added should already have been
             # completed with the aux
-            self.triple.verb.prepend(token)
+            self.triple.verb.extend(token)
 
     @proceed
     def parataxis(self, token_head, token, *args, **kwargs):
