@@ -9,6 +9,12 @@ verify_ssl = true
 spacy = "*"
 pandas = "*"
 textacy = "*"
+stanfordnlp = "*"
+spacy-stanfordnlp = "*"
+lxml = "*"
+colorama = "*"
+ansi2html = "*"
+Flask = "*"
 
 [requires]
 python_version = "3.7"

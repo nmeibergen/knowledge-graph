@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alpino_ds version="1.6">
+  <parser cats="1" skips="0" />
+  <node begin="0" cat="top" end="23" id="0" rel="top">
+    <node begin="0" cat="conj" end="22" id="1" rel="--">
+      <node begin="0" cat="smain" end="9" id="2" rel="cnj">
+        <node begin="0" cat="np" end="3" id="3" rel="su">
+          <node begin="0" end="1" frame="determiner(de)" his="normal" his_1="decap" his_1_1="normal" id="4" infl="de" lcat="detp" lemma="de" lwtype="bep" naamval="stan" npagr="rest" pos="det" postag="LID(bep,stan,rest)" pt="lid" rel="det" root="de" sense="de" word="De"/>
+          <node aform="base" begin="1" buiging="met-e" end="2" frame="adjective(e)" graad="basis" his="normal" his_1="normal" id="5" infl="e" lcat="ap" lemma="Portugees" naamval="stan" pos="adj" positie="prenom" postag="ADJ(prenom,basis,met-e,stan)" pt="adj" rel="mod" root="Portugees" sense="Portugees" vform="adj" word="Portugese"/>
+          <node begin="2" end="3" frame="proper_name(sg,'PER')" genus="zijd" getal="ev" graad="basis" his="normal" his_1="names_dictionary" id="6" lcat="np" lemma="Kroon" naamval="stan" neclass="PER" ntype="eigen" num="sg" pos="name" postag="N(eigen,ev,basis,zijd,stan)" pt="n" rel="hd" rnum="sg" root="Kroon" sense="Kroon" word="Kroon"/>
+        </node>
+        <node begin="3" end="4" frame="verb(hebben,past(sg),part_transitive(uit))" his="normal" his_1="normal" id="7" infl="sg" lcat="smain" lemma="uit_breiden" pos="verb" postag="WW(pv,verl,ev)" pt="ww" pvagr="ev" pvtijd="verl" rel="hd" root="breid_uit" sc="part_transitive(uit)" sense="breid_uit" stype="declarative" tense="past" word="breidde" wvorm="pv"/>
+        <node begin="4" cat="np" end="6" id="8" rel="obj1">
+          <node begin="4" buiging="zonder" end="5" frame="determiner(pron)" getal="ev" his="normal" his_1="normal" id="9" infl="pron" lcat="detp" lemma="haar" naamval="stan" npagr="agr" pdtype="det" persoon="3" pos="det" positie="prenom" postag="VNW(bez,det,stan,vol,3,ev,prenom,zonder,agr)" pron="true" pt="vnw" rel="det" root="haar" sense="haar" status="vol" vwtype="bez" word="haar"/>
+          <node begin="5" end="6" frame="noun(de,count,sg)" gen="de" genus="zijd" getal="ev" graad="basis" his="normal" his_1="normal" id="10" lcat="np" lemma="heerschappij" naamval="stan" ntype="soort" num="sg" pos="noun" postag="N(soort,ev,basis,zijd,stan)" pt="n" rel="hd" rnum="sg" root="heerschappij" sense="heerschappij" word="heerschappij"/>
+        </node>
+        <node begin="6" end="7" frame="sentence_adverb" his="normal" his_1="normal" id="11" lcat="advp" lemma="echter" pos="adv" postag="BW()" pt="bw" rel="mod" root="echter" sense="echter" special="sentence" word="echter"/>
+        <node aform="base" begin="7" buiging="zonder" end="8" frame="adjective(no_e(adv))" graad="basis" his="normal" his_1="normal" id="12" infl="no_e" lcat="ap" lemma="gestaag" pos="adj" positie="vrij" postag="ADJ(vrij,basis,zonder)" pt="adj" rel="mod" root="gestaag" sense="gestaag" vform="adj" word="gestaag"/>
+        <node begin="8" end="9" frame="particle(uit)" his="normal" his_1="normal" id="13" lcat="part" lemma="uit" pos="part" postag="VZ(fin)" pt="vz" rel="svp" root="uit" sense="uit" vztype="fin" word="uit"/>
+      </node>
+      <node begin="9" conjtype="neven" end="10" frame="conj(en)" his="normal" his_1="normal" id="14" lcat="vg" lemma="en" pos="vg" postag="VG(neven)" pt="vg" rel="crd" root="en" sense="en" word="en"/>
+      <node begin="10" cat="smain" end="22" id="15" rel="cnj">
+        <node begin="10" cat="pp" end="12" id="16" rel="mod">
+          <node begin="10" end="11" frame="preposition(in,[])" his="normal" his_1="normal" id="17" lcat="pp" lemma="in" pos="prep" postag="VZ(init)" pt="vz" rel="hd" root="in" sense="in" vztype="init" word="in"/>
+          <node begin="11" end="12" frame="np(year)" his="normal" his_1="date_year" id="18" lcat="np" lemma="1808" neclass="year" numtype="hoofd" pos="noun" positie="vrij" postag="TW(hoofd,vrij)" pt="tw" rel="obj1" root="1808" sense="1808" word="1808"/>
+        </node>
+        <node begin="12" end="13" frame="verb(zijn,past(sg),ld_pp)" his="normal" his_1="normal" id="19" infl="sg" lcat="smain" lemma="verhuizen" pos="verb" postag="WW(pv,verl,ev)" pt="ww" pvagr="ev" pvtijd="verl" rel="hd" root="verhuis" sc="ld_pp" sense="verhuis" stype="declarative" tense="past" word="verhuisde" wvorm="pv"/>
+        <node begin="13" cat="np" end="18" id="20" rel="su">
+          <node begin="13" end="14" frame="determiner(de)" his="normal" his_1="normal" id="21" infl="de" lcat="detp" lemma="de" lwtype="bep" naamval="stan" npagr="rest" pos="det" postag="LID(bep,stan,rest)" pt="lid" rel="det" root="de" sense="de" word="de"/>
+          <node aform="base" begin="14" buiging="met-e" end="15" frame="adjective(e)" graad="basis" his="normal" his_1="normal" id="22" infl="e" lcat="ap" lemma="Portugees" naamval="stan" pos="adj" positie="prenom" postag="ADJ(prenom,basis,met-e,stan)" pt="adj" rel="mod" root="Portugees" sense="Portugees" vform="adj" word="Portugese"/>
+          <node begin="15" end="16" frame="noun(de,count,sg)" gen="de" genus="zijd" getal="ev" graad="basis" his="normal" his_1="normal" id="23" lcat="np" lemma="hofhouding" naamval="stan" ntype="soort" num="sg" pos="noun" postag="N(soort,ev,basis,zijd,stan)" pt="n" rel="hd" rnum="sg" root="hofhouding" sense="hofhouding" word="hofhouding"/>
+          <node begin="16" cat="pp" end="18" id="24" rel="mod">
+            <node begin="16" end="17" frame="preposition(van,[af,uit,vandaan,[af,aan]])" his="normal" his_1="normal" id="25" lcat="pp" lemma="van" pos="prep" postag="VZ(init)" pt="vz" rel="hd" root="van" sense="van" vztype="init" word="van"/>
+            <node begin="17" end="18" frame="proper_name(sg,'LOC')" genus="onz" getal="ev" graad="basis" his="normal" his_1="names_dictionary" id="26" lcat="np" lemma="Lissabon" naamval="stan" neclass="LOC" ntype="eigen" num="sg" pos="name" postag="N(eigen,ev,basis,onz,stan)" pt="n" rel="obj1" rnum="sg" root="Lissabon" sense="Lissabon" word="Lissabon"/>
+          </node>
+        </node>
+        <node begin="18" cat="pp" end="22" id="27" rel="ld">
+          <node begin="18" end="19" frame="preposition(naar,[toe])" his="normal" his_1="normal" id="28" lcat="pp" lemma="naar" pos="prep" postag="VZ(init)" pt="vz" rel="hd" root="naar" sense="naar" vztype="init" word="naar"/>
+          <node begin="19" cat="mwu" end="22" his="normal" his_1="names_dictionary" id="29" mwu_root="Rio de Janeiro" mwu_sense="Rio de Janeiro" rel="obj1">
+            <node begin="19" end="20" frame="proper_name(sg,'LOC')" id="30" lcat="np" lemma="Rio" neclass="LOC" num="sg" pos="name" postag="SPEC(deeleigen)" pt="spec" rel="mwp" rnum="sg" root="Rio" sense="Rio" spectype="deeleigen" word="Rio"/>
+            <node begin="20" end="21" frame="proper_name(sg,'LOC')" id="31" lcat="np" lemma="de" neclass="LOC" num="sg" pos="name" postag="SPEC(deeleigen)" pt="spec" rel="mwp" rnum="sg" root="de" sense="de" spectype="deeleigen" word="de"/>
+            <node begin="21" end="22" frame="proper_name(sg,'LOC')" id="32" lcat="np" lemma="Janeiro" neclass="LOC" num="sg" pos="name" postag="SPEC(deeleigen)" pt="spec" rel="mwp" rnum="sg" root="Janeiro" sense="Janeiro" spectype="deeleigen" word="Janeiro"/>
+          </node>
+        </node>
+      </node>
+    </node>
+    <node begin="22" end="23" frame="punct(punt)" his="normal" his_1="normal" id="33" lcat="punct" lemma="." pos="punct" postag="LET()" pt="let" rel="--" root="." sense="." special="punt" word="."/>
+  </node>
+  <sentence sentid="test.p.1.s.9">De Portugese Kroon breidde haar heerschappij echter gestaag uit en in 1808 verhuisde de Portugese hofhouding van Lissabon naar Rio de Janeiro .</sentence>
+  <comments>
+    <comment>Q#test.p.1.s.9|De Portugese Kroon breidde haar heerschappij echter gestaag uit en in 1808 verhuisde de Portugese hofhouding van Lissabon naar Rio de Janeiro .|1|1|-7.820073304080002</comment>
+  </comments>
+</alpino_ds>

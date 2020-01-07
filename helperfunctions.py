@@ -35,3 +35,43 @@ def index_of(val, in_list, value_if_not_exists=-1):
         return in_list.index(val)
     except ValueError:
         return value_if_not_exists
+
+
+def nested_list_copy(item):
+    if isinstance(item, list):
+        # Check if the list has sublists
+        copied_list = []
+        if any(isinstance(sub_item, list) for sub_item in item):
+            sublist = []
+            for sub_item in item:
+                sublist.extend(nested_list_copy(sub_item))
+
+            copied_list.extend(sublist.copy())
+
+        else:
+            copied_list.append(item.copy())
+
+        return copied_list
+    else:
+        # Throw warning, no list provided and will not perform copying
+        return item
+
+    #
+    #     for sub_item in item:
+    #         if any(isinstance(subsub_item, list) for subsub_item in sub_item):
+    #             copied_subsub = []
+    #             for subsub_item in sub_item:
+    #                 if isinstance(sub_item, list):
+    #                     copied_list.append(nested_list_copy(sub_item))
+    #             else:
+    #             copied_sub = [value.copy() for value in sub_item]
+    #         else:
+    #             copied_list.append(sub_item.copy())
+    #
+    #     return copied_list
+    # elif item is None:
+    #     return None
+    # else:
+
+
+test = [[1, 2], [4, [5]]]
