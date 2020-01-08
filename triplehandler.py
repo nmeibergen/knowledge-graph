@@ -1,37 +1,164 @@
-from helperfunctions import set_pos_exceptions, index_of, nested_list_copy
+from helperfunctions import set_pos_exceptions, index_of, nested_copy
 from copy import copy
 from my_logging import logger
 from spacy.tokens import Token
 
 
-class Chunk:
+def complete(token):
+    value = [token]
+    print(f"\n\ncomplete: {token.text}\n")
+    logger.info(f"Start completion for token: {value[0].text}")
+    for token_child in token.children:
+        dependency = token_child.dep_.split(":")[0]
+        if dependency == "compound":
+            logger.info(f"> Compound completion: {value}")
+            # "Zij lopen en rennen precies in de maat"
+            # compound(in, de), compound(in, maat) -> in de maat
+            value.extend(complete(token_child))
+
+        if dependency == "flat":
+            logger.info(f"> Flat completion: {value}")
+            # "webkit is ontwikkeld door Intel, aan de Intel Open Source Technology Center."
+            # flat(Intel, Open), flat(Intel, Source), etc.
+            value.extend(complete(token_child))
+
+        if dependency == "amod":
+            if token_child.pos_ != "ADV" and token.dep_ != "appos":
+                logger.info(f"> Amod completion: {value}")
+                # adjective modifier = toevoeging van bijvoeglijk naamwoord
+                # "De langdurige zorg blijkt zeer goed te werken"
+                # amod(zorg, langdurige)
+                value.extend(complete(token_child))
+
+        if dependency == "advmod":
+            # adverb = bijwoord, this relation may not be highly important to include
+            # however, in some cases it is very important, e.g. Dementie is echter nog niet verholpen, now:
+            # advmod(verholpen, niet), advmod(verholpen, echter), advmod(niet, nog)
+            # in this case, "niet verholpen" is very important to retrieve! However, echter and nog, seem redudant
+            # Todo:
+            #  We thus may need a removal of stopwords!
+
+            # "De langdurige zorg blijkt zeer goed te werken"
+            # advmod(zeer, goed)
+            if token_child.pos_ == "ADV":
+                logger.info(f"> Advmod completion: {value}")
+                # We only include the adverb if it contains an important value, such as denials
+                adv_value = complete(token_child)
+                has_important_adv = adv_value in ["niet", "geen", "nooit"]
+                if has_important_adv:
+                    value.extend(adv_value)
+
+        if dependency == "aux":
+            if token.pos_ == "VERB":
+                logger.info(f"> Aux completion: {value}")
+                # "webkit is ontwikkeld door Intel, aan de Intel Open Source Technology Center."
+                # aux(ontwikkeld, is)
+                value.extend(complete(token_child))
+
+        # if dependency == "mark":
+        #     # "De langdurige zorg blijkt zeer goed te werken"
+        #     # mark(werken, te)
+        #     logger.info(f"> Mark completion: {value}")
+        #     value.extend(complete(token_child))
+
+        if dependency == "fixed":
+            value.extend(complete(token_child))
+
+        if dependency == "appos":
+            if token_child.pos_ == "NUM":
+                # text = "Afwisselende democratische en autocratische regeringen volgden elkaar op tot in de jaren
+                # 80 van de twintigste eeuw"
+                # appos(jaren, 80)
+                value.extend(complete(token_child))
+
+        if dependency == "nmod_obsolete":
+            # The nmod is only used as completion if it the token doesn't have a case dependency.
+            # Hij is president van zuid-amerika
+            # nmod(president, zuid-amerika)
+            # -> triples: (hij, is, president) and (hij, is president van, zuid-amerika)
+            if not any([tok.dep_ == "case" for tok in token_child.children]):
+                value.extend(complete(token_child))
+
+        if dependency == "nmod":
+            print(f"NMOD: {token_child.text}")
+            value.extend(complete(token_child))
+
+        if dependency == "nummod":
+            value.extend(complete(token_child))
+
+        if dependency == "case":
+            if token.dep_ == "nmod":
+                value.extend(complete(token_child))
+
+    return value
+
+
+class ChunkValue(list):
+    def __init__(self, value=None, *args, **kwargs):
+        assert(isinstance(value, Token) or isinstance(value, str) or value is None)
+
+        if value is not None:
+            self.head = value
+            self.extend_heads = []
+
+            # complete the token (expand to chunk)
+            if isinstance(value, Token):
+                value = complete(value)
+
+            logger.info(f"Set triple item value: {value}")
+
+            list.__init__(self, value, *args)
+
+    def _set(self, value, *args):
+        list.__init__(self, value, *args)
+
+    def extend(self, value):
+        # If the current value is a string or token, then it can only be extended with the same types
+        assert (type(value).__name__ == "Token" or isinstance(value, str) or value is None)
+
+        self.extend_heads.append(value)
+
+        if isinstance(value, Token):
+            value = complete(value)
+
+        if isinstance(value, str):
+            value = [value]
+
+        list.extend(self, value)
+
+    def copy(self):
+        new_list = super().copy()
+
+        new_chunk_value = ChunkValue()
+        new_chunk_value.__dict__ = self.__dict__.copy()
+        new_chunk_value._set(new_list)
+
+        return new_chunk_value
+
+
+class MultiChunk:
 
     def __init__(self):
+        self.header = None
         self.value = None
         self.last = None
 
     def generic_set(self, token, sub_item_name):
         assert(type(token).__name__ == "Token" or isinstance(token, str))
 
-        # before adding the item, we complete it
-        if isinstance(token, str):
-            completed_value = [token]
-        else:
-            completed_value = self.complete(token)
-        logger.info(f"Set triple item value: {completed_value}")
-        setattr(self, sub_item_name, [completed_value])
+        value = ChunkValue(token)
+
+        setattr(self, sub_item_name, [value])
 
     def generic_add(self, token, sub_item_name):
         current_val = getattr(self, sub_item_name)
         if current_val is None:
-            self.generic_set(token,sub_item_name)
+            self.generic_set(token, sub_item_name)
         else:
-            current_val.append(self.complete(token))
+            new_chunk = ChunkValue(token)
+            current_val.append(new_chunk)
 
     def generic_extend(self, token, sub_item_name):
-        # If the current value is a string or token, then it can only be extended with the same types
-        assert (type(token).__name__ == "Token" or isinstance(token, str) or token is None)
-
         current_val = getattr(self, sub_item_name)
         if current_val is None:
             # get set method
@@ -39,32 +166,18 @@ class Chunk:
             if set_method is not None:
                 set_method(token)
         else:
-            if isinstance(token, str):
-                if not isinstance(current_val[-1], str):
-                    mess = "Trying to add a string token to a Chunk that contains tokens of other types"
-                    logger.error(mess)
-                    exit(mess)
-                completed_value = token
-                current_val[-1].append(completed_value)
-            if type(token).__name__ == "Token":
-                if type(current_val[0][0]).__name__ != "Token":
-                    mess = "Trying to add a string token to a Chunk that contains tokens of other types"
-                    logger.error(mess)
-                    exit(mess)
-
-                completed_value = self.complete(token)
-                current_val[-1].extend(completed_value)
+            current_val[-1].extend(token)
 
     def set(self, value):
         if value is not None:
             if type(value).__name__ == type(self).__name__:
-                self.Chunk_copy(fr=value, to=self)
+                nested_copy(fr=value, to=self, proceed_on=[list, ChunkValue])
             elif isinstance(value, str) or type(value).__name__ == "Token":
                 self.set_value(token=value)
 
     def set_value(self, token):
         # # before adding the item, we complete it
-        # completed_value = self.complete(token)
+        # completed_value = complete(token)
         # logger.info(f"Set triple item value: {completed_value}")
         # self.value = [completed_value]
 
@@ -74,102 +187,14 @@ class Chunk:
         self.last = "value"
 
     def add_value(self, token):
-        # Add a new token to the Chunk, e.g.:
+        # Add a new token to the MultiChunk, e.g.:
         # Paul en Pieter vinden geel mooi
-        # Here the first noun should be the Chunk [Paul, Pieter] so that we get the Triple:
+        # Here the first noun should be the MultiChunk [Paul, Pieter] so that we get the Triple:
         # ([Paul, Pieter], [vinden mooi], [geel]) -> (Paul, vinden mooi, geel) and (Pieter, vinden mooi, geel)
         self.generic_add(token, "value")
 
     def extend_value(self, token):
         self.generic_extend(token, sub_item_name="value")
-
-    def complete(self, token):
-        value = [token]
-        print(f"\n\ncomplete: {token.text}\n")
-        logger.info(f"Start completion for token: {value[0].text}")
-        for token_child in token.children:
-            dependency = token_child.dep_.split(":")[0]
-            if dependency == "compound":
-                logger.info(f"> Compound completion: {value}")
-                # "Zij lopen en rennen precies in de maat"
-                # compound(in, de), compound(in, maat) -> in de maat
-                value.extend(self.complete(token_child))
-
-            if dependency == "flat":
-                logger.info(f"> Flat completion: {value}")
-                # "webkit is ontwikkeld door Intel, aan de Intel Open Source Technology Center."
-                # flat(Intel, Open), flat(Intel, Source), etc.
-                value.extend(self.complete(token_child))
-
-            if dependency == "amod":
-                if token_child.pos_ != "ADV" and token.dep_ != "appos":
-                    logger.info(f"> Amod completion: {value}")
-                    # adjective modifier = toevoeging van bijvoeglijk naamwoord
-                    # "De langdurige zorg blijkt zeer goed te werken"
-                    # amod(zorg, langdurige)
-                    value.extend(self.complete(token_child))
-
-            if dependency == "advmod":
-                # adverb = bijwoord, this relation may not be highly important to include
-                # however, in some cases it is very important, e.g. Dementie is echter nog niet verholpen, now:
-                # advmod(verholpen, niet), advmod(verholpen, echter), advmod(niet, nog)
-                # in this case, "niet verholpen" is very important to retrieve! However, echter and nog, seem redudant
-                # Todo:
-                #  We thus may need a removal of stopwords!
-
-                # "De langdurige zorg blijkt zeer goed te werken"
-                # advmod(zeer, goed)
-                if token_child.pos_ == "ADV":
-                    logger.info(f"> Advmod completion: {value}")
-                    # We only include the adverb if it contains an important value, such as denials
-                    adv_value = self.complete(token_child)
-                    has_important_adv = adv_value in ["niet", "geen", "nooit"]
-                    if has_important_adv:
-                        value = value.extend(adv_value)
-
-            if dependency == "aux":
-                if token.pos_ == "VERB":
-                    logger.info(f"> Aux completion: {value}")
-                    # "webkit is ontwikkeld door Intel, aan de Intel Open Source Technology Center."
-                    # aux(ontwikkeld, is)
-                    value.extend(self.complete(token_child))
-
-            # if dependency == "mark":
-            #     # "De langdurige zorg blijkt zeer goed te werken"
-            #     # mark(werken, te)
-            #     logger.info(f"> Mark completion: {value}")
-            #     value.extend(self.complete(token_child))
-
-            if dependency == "fixed":
-                value.extend(self.complete(token_child))
-
-            if dependency == "appos":
-                if token_child.pos_ == "NUM":
-                    # text = "Afwisselende democratische en autocratische regeringen volgden elkaar op tot in de jaren
-                    # 80 van de twintigste eeuw"
-                    # appos(jaren, 80)
-                    value.extend(self.complete(token_child))
-
-            if dependency == "nmod_obsolete":
-                # The nmod is only used as completion if it the token doesn't have a case dependency.
-                # Hij is president van zuid-amerika
-                # nmod(president, zuid-amerika)
-                # -> triples: (hij, is, president) and (hij, is president van, zuid-amerika)
-                if not any([tok.dep_ == "case" for tok in token_child.children]):
-                    value.extend(self.complete(token_child))
-
-            if dependency == "nmod":
-                print(f"NMOD: {token_child.text}")
-                value.extend(self.complete(token_child))
-
-            if dependency == "nummod":
-                value.extend(self.complete(token_child))
-
-            if dependency == "case":
-                if token.dep_ == "nmod":
-                    value.extend(self.complete(token_child))
-
-        return value
 
     def is_empty(self):
         if self.value is None:
@@ -221,7 +246,7 @@ class Chunk:
     @staticmethod
     def subitem_to_string(sub_item):
         if sub_item is not None:
-            sorted_vals = [Chunk.sorted_token_values(tokens) for tokens in sub_item]
+            sorted_vals = [MultiChunk.sorted_token_values(tokens) for tokens in sub_item]
             if len(sorted_vals) > 1:
                 sorted_vals = "[" + ', '.join(sorted_vals) + "]"
             else:
@@ -230,35 +255,12 @@ class Chunk:
         else:
             return ""
 
-    @staticmethod
-    def Chunk_copy(fr, to=None):
-        """
-        Copy the from Chunk to the to Chunk
-        :param fr: Chunk
-        :param to: Chunk or None
-        :return: Chunk
-        """
-        if to is None:
-            to = type(fr)()
-
-        # both items must of the same type
-        assert(type(to).__name__ == type(fr).__name__)
-
-        to.__dict__ = fr.__dict__.copy()
-
-        # Perform in between shallow and deep copy: extract content of (nested)lists
-        for key, val in fr.__dict__.items():
-            if isinstance(val, list):
-                to.__dict__[key] = nested_list_copy(item=val)
-
-        return to
-
     def __copy__(self):
 
-        return self.Chunk_copy(self)
+        return nested_copy(self, proceed_on=[list, ChunkValue])
 
 
-class Noun(Chunk):
+class Noun(MultiChunk):
     def __init__(self):
         super().__init__()
         self.nmod = None
@@ -282,7 +284,7 @@ class Noun(Chunk):
         return f"{sorted_values}{sorted_nmod}"
 
 
-class Verb(Chunk):
+class Verb(MultiChunk):
 
     def __init__(self):
         super().__init__()
@@ -364,7 +366,7 @@ class Verb(Chunk):
         # text = "Brazilië is met zijn 8,5 miljoen vierkante kilometer het grootste land van Zuid-Amerika, het beslaat
         # bijna de helft van dit continent."
         # cop(is, land), case(zuid-amerika, van)
-        # For the verb Chunk: value = is, cop = grootste land, case = met/van
+        # For the verb MultiChunk: value = is, cop = grootste land, case = met/van
 
         return f"{sorted_values}{sorted_cop}{sorted_obj}{sorted_case}".lower()
 

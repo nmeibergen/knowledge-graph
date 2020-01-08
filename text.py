@@ -103,3 +103,5 @@ Brazilië is medeoprichter van de Verenigde Naties, de G20, Mercosur, de Organis
 # Todo:
 #  Nagaan of deze zin de gewenste triples geeft.
 # text = "De verbinding met het Portugese vorstenhuis bleef nog enkele decennia behouden in het Keizerrijk Brazilië, maar werd met de Proclamatie van de Republiek in 1889 definitief verbroken"
+
+text = "De kolonisatie van Brazilië begon in 1500 met de komst van zeevaarder Pedro Álvares Cabral, die Brazilië tot Portugese kolonie uitriep."

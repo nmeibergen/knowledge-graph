@@ -38,6 +38,11 @@ def index_of(val, in_list, value_if_not_exists=-1):
 
 
 def nested_list_copy(item):
+    """
+    Requires that the item itself is of any of the proceed_on classes
+    :param item:
+    :return:
+    """
     if isinstance(item, list):
         # Check if the list has sublists
         copied_list = []
@@ -56,22 +61,29 @@ def nested_list_copy(item):
         # Throw warning, no list provided and will not perform copying
         return item
 
-    #
-    #     for sub_item in item:
-    #         if any(isinstance(subsub_item, list) for subsub_item in sub_item):
-    #             copied_subsub = []
-    #             for subsub_item in sub_item:
-    #                 if isinstance(sub_item, list):
-    #                     copied_list.append(nested_list_copy(sub_item))
-    #             else:
-    #             copied_sub = [value.copy() for value in sub_item]
-    #         else:
-    #             copied_list.append(sub_item.copy())
-    #
-    #     return copied_list
-    # elif item is None:
-    #     return None
-    # else:
 
+def nested_copy(fr, to=None, proceed_on=None):
+    """
+    Copy the from MultiChunk to the to MultiChunk
+    :param fr: MultiChunk
+    :param to: MultiChunk or None
+    :param proceed_on: list of classes on which to proceed the nested copy
+    :return: MultiChunk
+    """
+    if to is None:
+        to = type(fr)()
 
-test = [[1, 2], [4, [5]]]
+    if proceed_on is None:
+        proceed_on = [list]
+
+    # both items must of the same type
+    assert(type(to).__name__ == type(fr).__name__)
+
+    to.__dict__ = fr.__dict__.copy()
+
+    # Perform in between shallow and deep copy: extract content of (nested)lists
+    for key, val in fr.__dict__.items():
+        if any(isinstance(val, proceed_class) for proceed_class in proceed_on):
+            to.__dict__[key] = nested_list_copy(item=val)
+
+    return to
