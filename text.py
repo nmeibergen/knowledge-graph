@@ -21,13 +21,13 @@ Brazilië is medeoprichter van de Verenigde Naties, de G20, Mercosur, de Organis
 #
 # In oktober 2012 bracht Schwarzenegger een autobiografie uit met de titel Total Recall, het grootste gedeelte van het boek gaan over zijn successen in het leven als bodybuilder, acteur en gouverneur."""
 #
-# text = """Donald John Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten. Trump behoort tot de Republikeinse Partij. Vóór zijn presidentschap had hij nooit eerder een politieke functie vervuld. Van beroep was hij ondernemer, voornamelijk in het vastgoed. Verder is hij schrijver en televisiepersoonlijkheid.
-#
-# Donald Trump is de zoon van Fred Trump, een vastgoedontwikkelaar uit New York. Toen Donald Trump naar de Wharton School van de Universiteit van Pennsylvania ging, werkte hij al voor het bedrijf van zijn vader en grootmoeder, Elizabeth Trump & Son, de voorloper van The Trump Organization. In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan. Hij kreeg in 1971 de zeggenschap over het bedrijf en veranderde de naam in The Trump Organization. Door zijn promotie-inspanningen, carrière, verschijningen in media en boeken (vaak door ghostwriters geschreven) werd hij een mediapersoonlijkheid in de Verenigde Staten. Trump presenteerde The Apprentice, een Amerikaans televisieprogramma op NBC.
-#
-# Op 16 juni 2015 stelde Trump zich officieel kandidaat voor de presidentsverkiezingen van 2016 als Republikein. In eerste stadium van zijn campagne bleek hij zeer populair te zijn, dit tot grote verontrusting van de leiders van de Republikeinse Partij. Vanaf eind juli 2015 stond hij bovenaan in de peilingen voor de Republikeinse nominatie, en sinds juli 2016 was hij de presidentskandidaat voor de Republikeinse Partij. Op 8 november 2016 won hij de presidentsverkiezingen en werd hij president-elect van de Verenigde Staten. Op 6 januari 2017 werd hij bevestigd als president door het Amerikaans Congres en op 20 januari 2017 werd hij beëdigd.
-#
-# In december 2019 is Trump in staat van beschuldiging gesteld (impeached) door het Huis van Afgevaardigden voor machtsmisbruik en het tegenwerken van het Congres in de Oekraïne-affaire.[1] De senaat moet hier nog over oordelen."""
+text = """Donald John Trump is sinds 20 januari 2017 de 45e president van de Verenigde Staten. Trump behoort tot de Republikeinse Partij. Vóór zijn presidentschap had hij nooit eerder een politieke functie vervuld. Van beroep was hij ondernemer, voornamelijk in het vastgoed. Verder is hij schrijver en televisiepersoonlijkheid.
+
+Donald Trump is de zoon van Fred Trump, een vastgoedontwikkelaar uit New York. Toen Donald Trump naar de Wharton School van de Universiteit van Pennsylvania ging, werkte hij al voor het bedrijf van zijn vader en grootmoeder, Elizabeth Trump & Son, de voorloper van The Trump Organization. In 1968 sloot hij zich officieel bij zijn vaders bedrijf aan. Hij kreeg in 1971 de zeggenschap over het bedrijf en veranderde de naam in The Trump Organization. Door zijn promotie-inspanningen, carrière, verschijningen in media en boeken (vaak door ghostwriters geschreven) werd hij een mediapersoonlijkheid in de Verenigde Staten. Trump presenteerde The Apprentice, een Amerikaans televisieprogramma op NBC.
+
+Op 16 juni 2015 stelde Trump zich officieel kandidaat voor de presidentsverkiezingen van 2016 als Republikein. In eerste stadium van zijn campagne bleek hij zeer populair te zijn, dit tot grote verontrusting van de leiders van de Republikeinse Partij. Vanaf eind juli 2015 stond hij bovenaan in de peilingen voor de Republikeinse nominatie, en sinds juli 2016 was hij de presidentskandidaat voor de Republikeinse Partij. Op 8 november 2016 won hij de presidentsverkiezingen en werd hij president-elect van de Verenigde Staten. Op 6 januari 2017 werd hij bevestigd als president door het Amerikaans Congres en op 20 januari 2017 werd hij beëdigd.
+
+In december 2019 is Trump in staat van beschuldiging gesteld (impeached) door het Huis van Afgevaardigden voor machtsmisbruik en het tegenwerken van het Congres in de Oekraïne-affaire.[1] De senaat moet hier nog over oordelen."""
 #text = "Schwarzenegger was de gouverneur van Californië van 2003 tot 2011"
 # text = "De Portugese Kroon breidde haar heerschappij echter gestaag uit en in 1808 verhuisde de Portugese hofhouding van Lissabon naar Rio de Janeiro"
 # text = "De Portugese Kroon breidde haar heerschappij echter niet uit en in 1808 verhuisde de Portugese hofhouding van Lissabon naar Rio de Janeiro"
@@ -104,4 +104,4 @@ Brazilië is medeoprichter van de Verenigde Naties, de G20, Mercosur, de Organis
 #  Nagaan of deze zin de gewenste triples geeft.
 # text = "De verbinding met het Portugese vorstenhuis bleef nog enkele decennia behouden in het Keizerrijk Brazilië, maar werd met de Proclamatie van de Republiek in 1889 definitief verbroken"
 
-text = "De kolonisatie van Brazilië begon in 1500 met de komst van zeevaarder Pedro Álvares Cabral, die Brazilië tot Portugese kolonie uitriep."
+# text = "De kolonisatie van Brazilië begon in 1500 met de komst van zeevaarder Pedro Álvares Cabral, die Brazilië tot Portugese kolonie uitriep."

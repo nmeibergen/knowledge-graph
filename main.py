@@ -17,7 +17,7 @@ nlp_model = "stanford"
 # * At 'knowledge_graph' folder run:
 #   > sh alpino-docker/alpino.bash $PWD/alpino-parses
 # * Write the parsed output to the output folder:
-#   > ~/data partok input/test.txt | Alpino number_analyses=1 end_hook=xml -parse -flag treebank output
+#   > partok input/test.txt | Alpino number_analyses=1 end_hook=xml -parse -flag treebank output
 # 2.
 # * At 'knowledge_graph' folder run:
 # > python3 dutchcoref/coref.py --verbose alpino-parses/output
@@ -41,6 +41,8 @@ if nlp is not None:
     # view_displacy(doc)
     triples = TriplesDoc(doc=doc)
     triples()
+
+    print(triples)
 
     process_coref(triples=triples, coref_mentions=mentions, coref_clusters=clusters)
 

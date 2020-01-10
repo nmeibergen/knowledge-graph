@@ -97,6 +97,8 @@ class ChunkValue(list):
     def __init__(self, value=None, *args, **kwargs):
         assert(isinstance(value, Token) or isinstance(value, str) or value is None)
 
+        self.coref = None
+
         if value is not None:
             self.head = value
             self.extend_heads = []
@@ -803,5 +805,48 @@ def process_coref(triples, coref_mentions, coref_clusters):
     # These are
     # - pronoun resolutions
     # - strict head match 5
-    sieves = ["pronounresolution", "strictheadmatch:5", None]
+    # Filter clusters on having more than 1 mention
+    coref_clusters = [cluster for cluster in coref_clusters if cluster is not None and len(cluster) > 1]
+
+    # Get mentions that are relevant based on their sieve
+    sieves = ["resolvepronouns", "strictheadmatch:5", None]
     coref_mentions = [mention for mention in coref_mentions if mention.sieve in sieves]
+
+    def find_first_occurrence_of_mention(coref_mentions, coref_clusters, sentence_number, token_number):
+        coref_occurrence = next((x for x in coref_mentions if
+                                 x.sentno == sentence_number and x.begin <= token_number <= x.end), None)
+        if coref_occurrence is not None:
+            # Get the first occurrence based on the cluster the mention occurs in
+            coref_cluster = next((cluster for cluster in coref_clusters if coref_occurrence.id in cluster), None)
+            if coref_cluster is not None:
+                first_occurrence_mention_id = list(coref_cluster)[0]
+                # Todo:
+                #  If we see that this id is equal to the coref_occurrence id, then we have the same and we may now know
+                #  that for this mention we actually do not need to create a coref... but if it is different we actually
+                #  need to identify which ChunkValue related to it!
+                return next((mention for mention in coref_mentions if mention.id == first_occurrence_mention_id), None)
+            else:
+                logger.error("Mention found, but could not identify the corresponding cluster")
+        else:
+            return None
+
+    # Add the first item of the cluster to the ChunkValue if we can match on the head
+    # iterate over all non-empty triple nouns and add the first mention if it exists
+    for triple in triples.triples:
+        if triple.is_valid():
+            noun1 = triple.noun1.value[0]
+            noun1.coref = find_first_occurrence_of_mention(
+                coref_mentions=coref_mentions,
+                coref_clusters=coref_clusters,
+                sentence_number=noun1.head._.sent_id,
+                token_number=noun1.head._.token_id)
+
+            noun2 = triple.noun1.value[0]
+            noun2.coref = find_first_occurrence_of_mention(
+                coref_mentions=coref_mentions,
+                coref_clusters=coref_clusters,
+                sentence_number=noun2.head._.sent_id,
+                token_number=noun2.head._.token_id)
+
+    x=1
+

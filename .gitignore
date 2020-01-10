@@ -5,3 +5,4 @@
 .git
 alpino-docker/
 dutchcoref/
+*.xml
